@@ -57,8 +57,8 @@ export async function fetchUserContribution(
                     totalContributions
                     weeks{
                     contributionDays {
+                        contributionCount 
                         date
-                        contributionCount
                         color
                     }}
                 }  

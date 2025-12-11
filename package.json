@@ -7,7 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "deploy": "bun run build && git add . && git commit -m 'dashboard backend' && git push origin main"
+    "deploy": "bun run build && git add . && git commit -m 'dashboard frontend' && git push origin main"
   },
   "dependencies": {
     "@prisma/adapter-pg": "^7.1.0",
@@ -28,7 +28,9 @@
     "octokit": "^5.0.5",
     "pg": "^8.16.3",
     "react": "19.2.1",
+    "react-activity-calendar": "^3.0.1",
     "react-dom": "19.2.1",
+    "recharts": "^3.5.1",
     "tailwind-merge": "^3.4.0"
   },
   "devDependencies": {

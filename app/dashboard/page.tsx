@@ -1,9 +1,195 @@
-import React from 'react'
+"use client";
 
-function DashboadPage() {
-  return (
-    <div>DashboadPage</div>
-  )
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  Legend,
+  ResponsiveContainer, // Corrected from ResponsiveContainner
+} from "recharts";
+import {
+  GitCommit,
+  GitPullRequest,
+  GitBranch,
+  MessageSquare,
+  Loader2,
+} from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
+import {
+  getDashboardStats,
+  getMonthlyActivity,
+} from "@/module/dashboard/actions";
+import ContributionGraph from "@/module/dashboard/components/contribution-graph";
+
+// --- Data Structures ---
+interface DashboardStats {
+    totalCommits: number;
+    totalPRs: number;
+    totalReviews: number;
+    totalRepos: number;
 }
 
-export default DashboadPage
+interface MonthlyActivity {
+    month: string;
+    commits: number;
+    prs: number;
+    reviews: number;
+}
+
+// --- Helper Components ---
+
+// A single Stat Card component for reusability
+interface StatCardProps {
+    title: string;
+    value: number;
+    icon: React.ElementType;
+    iconColor: string;
+}
+
+const StatCard: React.FC<StatCardProps> = ({ title, value, icon: Icon, iconColor }) => (
+  <Card className="shadow-md transition-all duration-300 hover:shadow-lg hover:border-blue-200">
+    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+      <CardTitle className="text-sm font-medium text-gray-500">{title}</CardTitle>
+      <Icon className={`h-4 w-4 ${iconColor}`} />
+    </CardHeader>
+    <CardContent>
+      <div className="text-3xl font-bold text-gray-800">
+        {value.toLocaleString()}
+      </div>
+      <p className="text-xs text-gray-400 mt-1">
+        Your AI-powered metric
+      </p>
+    </CardContent>
+  </Card>
+);
+
+// --- Main Dashboard Component ---
+
+function DashboardPage() {
+  const { data: stats, isLoading: isLoadingStats } = useQuery<DashboardStats>({
+    queryKey: ["dashboard-stats"],
+    queryFn: async () => getDashboardStats(),
+    refetchOnWindowFocus: false,
+  });
+
+  const { data: monthlyActivity, isLoading: isLoadingActivity } = useQuery<MonthlyActivity[]>({
+    queryKey: ["monthly-activity"],
+    queryFn: async () => getMonthlyActivity(),
+    refetchOnWindowFocus: false,
+  });
+  
+  // Placeholder/Skeleton for loading state
+  const loadingState = (
+    <div className="min-h-[300px] flex items-center justify-center">
+      <Loader2 className="mr-2 h-6 w-6 animate-spin text-blue-600" />
+      <span className="text-lg text-gray-500">Loading Dashboard Data...</span>
+    </div>
+  );
+
+  if (isLoadingStats) {
+    return loadingState;
+  }
+  
+  const dashboardStats = stats || { totalCommits: 0, totalPRs: 0, totalReviews: 0, totalRepos: 0 };
+  const chartData = monthlyActivity || [];
+
+  return (
+    <div className="p-4 sm:p-6 lg:p-8 bg-gray-50 min-h-screen">
+      <h1 className="text-3xl font-bold text-gray-900 mb-6">Welcome to Your Dashboard</h1>
+      
+      {/* 1. Stats Grid */}
+      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4 mb-8">
+        
+        <StatCard
+          title="Total Commits"
+          value={dashboardStats.totalCommits}
+          icon={GitCommit}
+          iconColor="text-green-500"
+        />
+        <StatCard
+          title="Pull Requests"
+          value={dashboardStats.totalPRs}
+          icon={GitPullRequest}
+          iconColor="text-blue-500"
+        />
+        <StatCard
+          title="AI Reviews Given"
+          value={dashboardStats.totalReviews}
+          icon={MessageSquare}
+          iconColor="text-indigo-500"
+        />
+        <StatCard
+          title="Monitored Repos"
+          value={dashboardStats.totalRepos}
+          icon={GitBranch}
+          iconColor="text-yellow-500"
+        />
+      </div>
+      
+      {/* 2. Main Graphs Section */}
+      <div className="grid gap-6 lg:grid-cols-12">
+        
+        {/* Contribution Graph (Lg: 12-col span) */}
+        <div className="lg:col-span-12">
+          <ContributionGraph />
+        </div>
+
+        {/* Monthly Activity Bar Chart (Lg: 12-col span) */}
+        <div className="lg:col-span-12">
+          <Card className="shadow-lg transition-all duration-300 hover:shadow-xl p-4 sm:p-6 bg-white">
+            <CardHeader className="px-0 pt-0 pb-4">
+              <CardTitle className="text-xl font-semibold text-gray-800">
+                Last 6 Months Activity
+              </CardTitle>
+              <CardDescription>
+                A breakdown of your coding and reviewing activity.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="p-0 h-[300px]">
+              {isLoadingActivity ? (
+                <div className="flex items-center justify-center h-full text-gray-500">
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Loading Activity Chart...
+                </div>
+              ) : (
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={chartData} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#e0e0e0" />
+                    <XAxis dataKey="month" stroke="#6b7280" />
+                    <YAxis stroke="#6b7280" />
+                    <Tooltip 
+                      cursor={{ fill: '#f3f4f6' }}
+                      contentStyle={{ 
+                        borderRadius: '0.5rem', 
+                        border: '1px solid #e5e7eb', 
+                        fontSize: '14px' 
+                      }} 
+                    />
+                    <Legend iconType="circle" wrapperStyle={{ paddingTop: '10px' }} />
+                    
+                    {/* Blue is the primary accent color */}
+                    <Bar dataKey="reviews" fill="#3b82f6" name="AI Reviews" radius={[4, 4, 0, 0]} />
+                    <Bar dataKey="commits" fill="#10b981" name="Commits" radius={[4, 4, 0, 0]} />
+                    <Bar dataKey="prs" fill="#8b5cf6" name="Pull Requests" radius={[4, 4, 0, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+        
+      </div>
+    </div>
+  );
+}
+
+export default DashboardPage;

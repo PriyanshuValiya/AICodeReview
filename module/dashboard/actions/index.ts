@@ -10,7 +10,44 @@ import { headers } from "next/headers";
 import { Octokit } from "octokit";
 import prisma from "@/lib/db";
 
-export async function getDashboardStatus() {
+export async function getUserContributionStats() {
+  try {
+    const session = await auth.api.getSession({
+      headers: await headers(),
+    });
+
+    if (!session?.user) {
+      throw new Error("No session found");
+    }
+
+    const token = await getGitHubToken();
+    const octokit = new Octokit({
+      auth: token,
+    });
+
+    const { data: user } = await octokit.rest.users.getAuthenticated();
+    const calendar = await fetchUserContribution(token, user?.login);
+
+    if (!calendar) {
+      return null;
+    } 
+
+    const contributions = calendar.weeks.flatMap((week: any) =>
+      week.contributionDays.map((day: any) => ({
+        date: day.date,
+        count: day.contributionCount,
+        level: Math.min(4, Math.floor(day.contributionCount / 3)),
+      }))
+    );
+
+    return { contributions, totalContributions: calendar.totalContributions };
+  } catch (error) {
+    console.error("Error fetching user contribution stats:", error);
+    return null;
+  }
+}
+
+export async function getDashboardStats() {
   try {
     const session = await auth.api.getSession({
       headers: await headers(),
@@ -27,7 +64,7 @@ export async function getDashboardStatus() {
 
     const { data: user } = await octokit.rest.users.getAuthenticated();
 
-    const totalRepos = 30;
+    const totalRepos = -1;
 
     const calendar = await fetchUserContribution(token, user.login);
     const totalCommits = calendar?.totalContributions || 0;
@@ -39,7 +76,7 @@ export async function getDashboardStatus() {
 
     const totalPRs = prs.total_count || 0;
 
-    const totalReviews = 44;
+    const totalReviews = -1;
 
     return { totalCommits, totalPRs, totalReviews, totalRepos };
   } catch (error) {
