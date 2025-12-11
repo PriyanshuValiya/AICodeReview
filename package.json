@@ -6,7 +6,8 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "deploy": "bun run build && git add . && git commit -m 'add dashboard' && git push origin main"
   },
   "dependencies": {
     "@prisma/adapter-pg": "^7.1.0",
