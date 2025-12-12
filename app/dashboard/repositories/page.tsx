@@ -9,8 +9,15 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { ExternalLink, Star, Search, Loader2, Zap } from "lucide-react";
-import { useState, useRef, useCallback } from "react"; // Added useCallback
+import {
+  ExternalLink,
+  Star,
+  Search,
+  Loader2,
+  Zap,
+  CheckCircle,
+} from "lucide-react"; // Added CheckCircle for badge
+import { useState, useRef, useCallback } from "react";
 import { useRepositories } from "@/module/repository/hooks/use-repositories";
 import { useConnectRepository } from "@/module/repository/hooks/use-connect-repository";
 
@@ -45,13 +52,13 @@ const RepositoryCard: React.FC<RepositoryCardProps> = ({
   return (
     <Card
       className={`
-                flex flex-col justify-between p-5 transition-all duration-300 border 
-                ${
-                  repo.isConnected
-                    ? "border-blue-400 shadow-md"
-                    : "hover:shadow-lg hover:border-gray-200"
-                }
-            `}
+        flex flex-col justify-between p-5 transition-all duration-300 border 
+        ${
+          repo.isConnected
+            ? "border-green-400 shadow-md" // 🟢 Use a distinct green border for connected
+            : "hover:shadow-lg hover:border-gray-200"
+        }
+      `}
     >
       {/* Header and Link */}
       <CardHeader className="p-0 mb-3 space-y-1">
@@ -69,19 +76,28 @@ const RepositoryCard: React.FC<RepositoryCardProps> = ({
           </a>
         </div>
         <CardDescription className="text-sm text-gray-500 line-clamp-2">
-          {repo.description || ""}
+          {repo.description || "No description provided."}
         </CardDescription>
       </CardHeader>
 
-      {/* Stats and Tags */}
+      {/* Stats, Tags, and Status Badge */}
       <CardContent className="p-0 mb-4 space-y-2">
         <div className="flex items-center space-x-4 text-sm text-gray-600">
+          {/* 🟢 NEW: Connected Status Badge */}
+          {repo.isConnected && (
+            <Badge className="bg-green-500 text-white font-semibold flex items-center shadow-sm">
+              <CheckCircle className="w-3 h-3 mr-1" />
+              Connected
+            </Badge>
+          )}
+
           {/* Language Badge */}
           {repo.language && (
             <Badge variant="secondary" className="bg-gray-100 text-gray-600">
               {repo.language}
             </Badge>
           )}
+
           {/* Stars */}
           <span className="flex items-center">
             <Star className="w-4 h-4 mr-1 text-yellow-500 fill-yellow-500" />
@@ -122,7 +138,7 @@ const RepositoryCard: React.FC<RepositoryCardProps> = ({
               Connecting...
             </>
           ) : repo.isConnected ? (
-            "Connected (AI Reviewing)"
+            "Connected (AI Reviewing)" // Text remains the same
           ) : (
             "Connect to AI Reviewer"
           )}
@@ -132,7 +148,7 @@ const RepositoryCard: React.FC<RepositoryCardProps> = ({
   );
 };
 
-// --- Main Repository Page Component ---
+// --- Main Repository Page Component (Remains mostly unchanged) ---
 function RepositoryPage() {
   const {
     data,
@@ -146,24 +162,18 @@ function RepositoryPage() {
   const { mutate: connectRepo } = useConnectRepository();
 
   const [searchQuery, setSearchQuery] = useState("");
-  // Local state to manage the temporary loading state of the connecting button
   const [localConnectingId, setLocalConnectingId] = useState<number | null>(
     null
   );
 
-  // Flatten all pages into a single array
   const allRepositories: Repository[] =
     data?.pages.flatMap((page) => page) || [];
 
-  // Filter the repositories based on search query
   const filteredRepositories = allRepositories.filter(
     (repo: Repository) =>
       repo.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       repo.full_name.toLowerCase().includes(searchQuery.toLowerCase())
   );
-
-  // Use a ref to track the observer element for infinite scrolling (optional, but good practice)
-  const observerRef = useRef<HTMLDivElement | null>(null);
 
   const handleRegister = async (repo: Repository) => {
     setLocalConnectingId(repo.id);
@@ -183,7 +193,6 @@ function RepositoryPage() {
 
   // --- UI Rendering ---
 
-  // Loading State
   if (isLoading && allRepositories.length === 0) {
     return (
       <div className="flex justify-center items-center h-64 text-gray-500">
@@ -193,7 +202,6 @@ function RepositoryPage() {
     );
   }
 
-  // Error State
   if (isError) {
     return (
       <Card className="shadow-xl p-6 bg-red-50 border-red-300">
@@ -222,7 +230,6 @@ function RepositoryPage() {
               Select repositories you want the AI Code Reviewer to monitor.
             </p>
           </div>
-          {/* Optional: Add a button to sync/refresh repos from GitHub */}
           <Button
             variant="outline"
             className="text-blue-600 border-blue-200 hover:bg-blue-50"
