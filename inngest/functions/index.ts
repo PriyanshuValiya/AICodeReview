@@ -1,10 +1,34 @@
 import { inngest } from "../client";
+import prisma from "@/lib/db";
+import { indexCodebase } from "@/module/ai/lib/rag";
+import { getRepoFileContent } from "@/module/github/lib/github";
+import { success } from "better-auth";
 
-export const helloWorld = inngest.createFunction(
-  { id: "hello-world" },
-  { event: "test/hello.world" },
+export const indexRepo = inngest.createFunction(
+  { id: "index-repo" },
+  { event: "repository.connected" },
   async ({ event, step }) => {
-    await step.sleep("waita-a-moment", "1s");
-    return { message: `hello ${event.data.email} !` };
+    const { owner, repo, userId } = event.data;
+
+    const files = await step.run("fetch-files", async () => {
+      const account = await prisma.account.findFirst({
+        where: {
+          userId: userId,
+          providerId: "github",
+        },
+      });
+
+      if (!account?.accessToken) {
+        throw new Error("No Github access token found !!");
+      }
+
+      return await getRepoFileContent(account.accessToken, owner, repo);
+    });
+
+    await step.run("index-codebase", async () => {
+      await indexCodebase(`${owner}/${repo}`, files);
+    });
+
+    return { success: true, indexedFiles: files.length };
   }
 );
