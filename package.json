@@ -7,7 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "deploy": "bun run build && git add . && git commit -m 'RAG implementation' && git push origin main"
+    "deploy": "bun run build && git add . && git commit -m 'AI Comment Posting' && git push origin main"
   },
   "dependencies": {
     "@ai-sdk/google": "^2.0.46",
