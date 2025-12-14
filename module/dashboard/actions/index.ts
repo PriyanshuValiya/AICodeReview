@@ -64,7 +64,7 @@ export async function getDashboardStats() {
 
     const { data: user } = await octokit.rest.users.getAuthenticated();
 
-    const totalRepos = -1;
+    const totalRepos = await prisma.repository.count();
 
     const calendar = await fetchUserContribution(token, user.login);
     const totalCommits = calendar?.totalContributions || 0;
@@ -76,7 +76,7 @@ export async function getDashboardStats() {
 
     const totalPRs = prs.total_count || 0;
 
-    const totalReviews = -1;
+    const totalReviews = await prisma.review.count();
 
     return { totalCommits, totalPRs, totalReviews, totalRepos };
   } catch (error) {

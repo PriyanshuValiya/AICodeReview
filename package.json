@@ -7,7 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "deploy": "bun run build && git add . && git commit -m 'AI Comment Posting' && git push origin main"
+    "deploy": "bun run build && git add . && git commit -m 'add Subscription module' && git push origin main"
   },
   "dependencies": {
     "@ai-sdk/google": "^2.0.46",
@@ -39,6 +39,7 @@
     "react-dom": "19.2.1",
     "recharts": "^3.5.1",
     "sonner": "^2.0.7",
+    "stripe": "^20.0.0",
     "tailwind-merge": "^3.4.0"
   },
   "devDependencies": {

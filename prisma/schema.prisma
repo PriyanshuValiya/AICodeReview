@@ -8,19 +8,38 @@ datasource db {
 }
 
 model User {
-  id            String       @id
-  name          String
-  email         String
-  emailVerified Boolean      @default(false)
-  image         String?
-  createdAt     DateTime     @default(now())
-  updatedAt     DateTime     @updatedAt
-  sessions      Session[]
-  accounts      Account[]
-  repositories  Repository[]
+  id                   String   @id
+  name                 String
+  email                String   @unique
+  emailVerified        Boolean  @default(false)
+  image                String?
 
-  @@unique([email])
-  @@map("user")
+  subscriptionTier     String   @default("FREE")
+  subscriptionStatus   String?
+
+  stripeCustomerId     String?  @unique
+  stripeSubscriptionId String?  @unique
+  stripePriceId        String?
+
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+
+  sessions             Session[]
+  accounts             Account[]
+  repositories         Repository[]
+  userUsage            UserUsage?
+}
+
+model UserUsage {
+  id              String   @id @default(cuid())
+  userId          String   @unique
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  repositoryCount Int      @default(0)
+  reviewCounts    Json     @default("{}")
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@map("user_usage")
 }
 
 model Repository {
