@@ -23,7 +23,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 
 // Icons
-import { Github, BookOpen, Settings, LogOut, Zap } from "lucide-react";
+import { Github, BookOpen, Settings, LogOut, Zap, Users } from "lucide-react";
 
 // Other Imports
 import Link from "next/link";
@@ -37,6 +37,7 @@ const navigationItems = [
   { title: "Repositories", href: "/dashboard/repositories", icon: Github },
   { title: "Reviews", href: "/dashboard/reviews", icon: BookOpen },
   { title: "Subscriptions", href: "/dashboard/subscriptions", icon: BookOpen },
+  { title: "Clients", href: "/dashboard/clients", icon: Users },
   { title: "Settings", href: "/dashboard/settings", icon: Settings },
 ];
 

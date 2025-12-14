@@ -36,7 +36,6 @@ import {
 } from "@/components/ui/alert-dialog";
 import { useState } from "react";
 
-// 🟢 UPDATED: Interface to strictly match the Prisma select statement in getConnectedRepositories
 interface Repository {
   id: string;
   name: string; // The repository name (e.g., "ai-reviewer")
