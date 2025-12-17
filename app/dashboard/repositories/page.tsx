@@ -1,4 +1,7 @@
 "use client";
+
+import type React from "react";
+
 import {
   Card,
   CardContent,
@@ -9,110 +12,123 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
   ExternalLink,
   Star,
   Search,
   Loader2,
-  Zap,
   CheckCircle,
-} from "lucide-react"; // Added CheckCircle for badge
-import { useState, useRef, useCallback } from "react";
+  GitBranch,
+  RefreshCw,
+} from "lucide-react";
+import { useState } from "react";
 import { useRepositories } from "@/module/repository/hooks/use-repositories";
 import { useConnectRepository } from "@/module/repository/hooks/use-connect-repository";
+import type { Repository, RepositoryCardProps } from "@/types/repository/types";
 
-// Re-defining the Repository interface for clarity
-interface Repository {
-  id: number;
-  name: string;
-  full_name: string;
-  description: string | null;
-  html_url: string;
-  stargazers_count: number;
-  language: string | null;
-  topics?: string[];
-  isConnected: boolean; // Indicates if the AI Code Reviewer is monitoring it
-}
-
-// --- Component to render a single Repository Card ---
-interface RepositoryCardProps {
-  repo: Repository;
-  onRegister: (repo: Repository) => void;
-  connectingId: number | null;
-}
+const RepositoryCardSkeleton = () => {
+  return (
+    <Card className="flex flex-col justify-between p-5 border border-blue-100 bg-white hover:border-blue-200 transition-all">
+      <CardHeader className="p-0 mb-4 space-y-3">
+        <div className="flex justify-between items-start">
+          <Skeleton className="h-6 w-3/4 bg-blue-50 rounded-md" />
+          <Skeleton className="h-5 w-5 rounded-sm bg-blue-50" />
+        </div>
+        <Skeleton className="h-4 w-full bg-blue-50 rounded-md" />
+        <Skeleton className="h-4 w-2/3 bg-blue-50 rounded-md" />
+      </CardHeader>
+      <CardContent className="p-0 mb-4 space-y-3">
+        <div className="flex items-center space-x-2">
+          <Skeleton className="h-6 w-16 rounded-full bg-blue-50" />
+          <Skeleton className="h-5 w-12 bg-blue-50 rounded-md" />
+        </div>
+        <div className="flex gap-2">
+          <Skeleton className="h-6 w-20 rounded-full bg-blue-50" />
+          <Skeleton className="h-6 w-20 rounded-full bg-blue-50" />
+        </div>
+      </CardContent>
+      <Skeleton className="h-10 w-full rounded-lg bg-blue-50" />
+    </Card>
+  );
+};
 
 const RepositoryCard: React.FC<RepositoryCardProps> = ({
   repo,
   onRegister,
   connectingId,
 }) => {
-  // Determine if the current repo is in the process of being connected
   const isConnecting = connectingId === repo.id;
 
   return (
     <Card
       className={`
-        flex flex-col justify-between p-5 transition-all duration-300 border 
+        group flex flex-col justify-between p-5 transition-all duration-300 
+        border bg-white
         ${
           repo.isConnected
-            ? "border-green-400 shadow-md" // 🟢 Use a distinct green border for connected
-            : "hover:shadow-lg hover:border-gray-200"
+            ? "border-blue-500 shadow-md shadow-blue-100 from-white to-blue-50"
+            : "border-blue-100 hover:border-blue-300 hover:shadow-2xl hover:shadow-blue-50"
         }
       `}
     >
-      {/* Header and Link */}
-      <CardHeader className="p-0 mb-3 space-y-1">
-        <div className="flex justify-between items-start">
-          <CardTitle className="text-xl font-semibold text-gray-900 truncate pr-4">
+      <CardHeader className="p-0 space-y-2">
+        <div className="flex justify-between items-start gap-3">
+          <CardTitle className="text-lg font-semibold text-gray-900 transition-colors line-clamp-1">
             {repo.name}
           </CardTitle>
           <a
             href={repo.html_url}
             target="_blank"
             rel="noopener noreferrer"
-            className="text-blue-500 hover:text-blue-700 transition-colors"
+            className="text-gray-400 hover:text-blue-600 transition-colors"
           >
-            <ExternalLink className="w-5 h-5 flex-shrink-0" />
+            <ExternalLink className="w-5 h-5" />
           </a>
         </div>
-        <CardDescription className="text-sm text-gray-500 line-clamp-2">
-          {repo.description || "No description provided."}
+        <CardDescription className="text-sm text-gray-600 line-clamp-2 leading-relaxed">
+          {repo.description || "No description"}
         </CardDescription>
       </CardHeader>
 
-      {/* Stats, Tags, and Status Badge */}
-      <CardContent className="p-0 mb-4 space-y-2">
-        <div className="flex items-center space-x-4 text-sm text-gray-600">
-          {/* 🟢 NEW: Connected Status Badge */}
-          {repo.isConnected && (
-            <Badge className="bg-green-500 text-white font-semibold flex items-center shadow-sm">
-              <CheckCircle className="w-3 h-3 mr-1" />
-              Connected
-            </Badge>
-          )}
+      <CardContent className="p-0 mb-5 space-y-3">
+        <div className="flex justify-between items-center gap-3 text-sm flex-wrap">
+          <div className="flex items-center gap-x-2">
+            {repo.isConnected && (
+              <Badge
+                variant="outline"
+                className="text-green-700 font-medium border border-green-700 px-2.5 py-0.5"
+              >
+                <CheckCircle className="w-3 h-3 mr-1.5" />
+                Connected
+              </Badge>
+            )}
 
-          {/* Language Badge */}
-          {repo.language && (
-            <Badge variant="secondary" className="bg-gray-100 text-gray-600">
-              {repo.language}
-            </Badge>
-          )}
+            {repo.language && (
+              <Badge
+                variant="outline"
+                className="text-blue-700 font-medium border border-blue-700"
+              >
+                {repo.language}
+              </Badge>
+            )}
+          </div>
 
-          {/* Stars */}
-          <span className="flex items-center">
-            <Star className="w-4 h-4 mr-1 text-yellow-500 fill-yellow-500" />
-            {repo.stargazers_count.toLocaleString()}
-          </span>
+          <div>
+            <span className="flex items-center text-gray-600 text-xs font-medium">
+              <Star className="w-4 h-4 mr-1 text-blue-500 fill-blue-500" />
+              {repo.stargazers_count.toLocaleString()}
+            </span>
+          </div>
         </div>
 
-        {/* Topics (if available) */}
         {repo.topics && repo.topics.length > 0 && (
-          <div className="flex flex-wrap gap-2 pt-2">
+          <div className="flex flex-wrap gap-2">
             {repo.topics.slice(0, 3).map((topic, index) => (
               <Badge
                 key={index}
                 variant="outline"
-                className="text-xs text-blue-600 border-blue-100 bg-blue-50"
+                className="text-xs text-blue-600 border-blue-200 bg-blue-50 font-normal"
               >
                 {topic}
               </Badge>
@@ -121,14 +137,13 @@ const RepositoryCard: React.FC<RepositoryCardProps> = ({
         )}
       </CardContent>
 
-      {/* Action Button */}
-      <div className="pt-3 border-t border-gray-100">
+      <div className="pt-4 border-t border-blue-100">
         <Button
           onClick={() => onRegister(repo)}
-          disabled={repo.isConnected || isConnecting}
-          className={`w-full font-semibold transition-colors duration-200 ${
+          disabled={isConnecting}
+          className={`w-full font-semibold transition-all duration-200 ${
             repo.isConnected
-              ? "bg-green-500 hover:bg-green-600 text-white"
+              ? "bg-blue-600 hover:bg-blue-700 text-white"
               : "bg-blue-600 hover:bg-blue-700 text-white"
           }`}
         >
@@ -138,9 +153,15 @@ const RepositoryCard: React.FC<RepositoryCardProps> = ({
               Connecting...
             </>
           ) : repo.isConnected ? (
-            "Connected (AI Reviewing)" // Text remains the same
+            <>
+              <CheckCircle className="mr-2 h-4 w-4" />
+              Connected
+            </>
           ) : (
-            "Connect to AI Reviewer"
+            <>
+              <GitBranch className="mr-2 h-4 w-4" />
+              Connect Repository
+            </>
           )}
         </Button>
       </div>
@@ -148,7 +169,6 @@ const RepositoryCard: React.FC<RepositoryCardProps> = ({
   );
 };
 
-// --- Main Repository Page Component (Remains mostly unchanged) ---
 function RepositoryPage() {
   const {
     data,
@@ -166,8 +186,7 @@ function RepositoryPage() {
     null
   );
 
-  const allRepositories: Repository[] =
-    data?.pages.flatMap((page) => page) || [];
+  const allRepositories: Repository[] = data?.pages.flat() || [];
 
   const filteredRepositories = allRepositories.filter(
     (repo: Repository) =>
@@ -191,59 +210,73 @@ function RepositoryPage() {
     );
   };
 
-  // --- UI Rendering ---
-
   if (isLoading && allRepositories.length === 0) {
     return (
-      <div className="flex justify-center items-center h-64 text-gray-500">
-        <Loader2 className="mr-2 h-6 w-6 animate-spin text-blue-600" />
-        <span className="text-lg">Loading repositories...</span>
+      <div className="p-4 sm:p-6 lg:p-8 from-white via-blue-50 to-white min-h-screen">
+        <div className="space-y-6 mb-8">
+          <Skeleton className="h-10 w-80 bg-blue-100 rounded-lg" />
+          <Skeleton className="h-5 w-96 bg-blue-100 rounded-md" />
+          <Skeleton className="h-14 w-full max-w-2xl rounded-xl bg-blue-100" />
+        </div>
+        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+          {Array.from({ length: 8 }).map((_, i) => (
+            <RepositoryCardSkeleton key={i} />
+          ))}
+        </div>
       </div>
     );
   }
 
   if (isError) {
     return (
-      <Card className="shadow-xl p-6 bg-red-50 border-red-300">
-        <h2 className="text-xl font-bold text-red-700">
-          Error Loading Repositories
-        </h2>
-        <p className="text-red-600">
-          Failed to fetch data from GitHub. Please try again later or check your
-          connection/permissions.
-        </p>
-      </Card>
+      <div className="p-4 sm:p-6 lg:p-8 from-white via-blue-50 to-white min-h-screen flex items-center justify-center">
+        <Card className="max-w-md mx-auto shadow-lg p-8 bg-white border border-blue-100">
+          <div className="text-center space-y-4">
+            <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto">
+              <ExternalLink className="w-8 h-8 text-blue-400" />
+            </div>
+            <h2 className="text-2xl font-semibold text-gray-900">
+              Unable to Load Repositories
+            </h2>
+            <p className="text-gray-600 text-sm leading-relaxed">
+              Failed to fetch data from GitHub. Please check your connection and
+              permissions, then try again.
+            </p>
+            <Button className="bg-blue-600 hover:bg-blue-700 text-white w-full mt-4">
+              Try Again
+            </Button>
+          </div>
+        </Card>
+      </div>
     );
   }
 
   return (
-    <div className="p-4 sm:p-6 lg:p-8 bg-white min-h-screen">
-      {/* Header and Search */}
-      <div className="space-y-6 mb-8">
-        <div className="flex items-center justify-between">
+    <div className="px-4 sm:px-6 lg:px-8 from-white via-blue-50 to-white min-h-screen">
+      <div className="space-y-6 mb-10">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
-            <h1 className="text-3xl font-bold tracking-tight text-gray-900">
-              <Zap className="inline w-6 h-6 mr-2 text-blue-600" />
-              Connect Repositories
+            <h1 className="text-4xl font-bold tracking-tight text-gray-900 mb-2">
+              Your Repository Manager
             </h1>
-            <p className="text-gray-500 mt-1">
-              Select repositories you want the AI Code Reviewer to monitor.
+            <p className="text-gray-600 text-base">
+              Connect your repositories for AI code analysis and reviews.
             </p>
           </div>
           <Button
             variant="outline"
-            className="text-blue-600 border-blue-200 hover:bg-blue-50"
+            className="text-blue-600 border-blue-300 hover:bg-blue-50 hover:border-blue-400 whitespace-nowrap bg-white"
           >
-            Sync GitHub Repos
+            <RefreshCw className="mr-2 h-4 w-4" />
+            Sync Repos
           </Button>
         </div>
 
-        {/* Search Input */}
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
+        <div className="relative max-w-2xl">
+          <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-blue-400" />
           <Input
             placeholder={`Search ${allRepositories.length} repositories...`}
-            className="pl-10 pr-4 py-6 text-base rounded-xl shadow-inner border-gray-200 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-shadow"
+            className="pl-12 pr-4 py-2.5 text-base rounded-lg border border-blue-200 bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all placeholder:text-gray-500"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
           />
@@ -262,37 +295,42 @@ function RepositoryPage() {
             />
           ))
         ) : (
-          <div className="col-span-full text-center py-16 text-gray-500">
-            {searchQuery
-              ? `No repositories match "${searchQuery}".`
-              : "No repositories found. Ensure your GitHub account is linked correctly."}
+          <div className="col-span-full text-center py-20">
+            <div className="w-20 h-20 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <Search className="w-10 h-10 text-blue-400" />
+            </div>
+            <p className="text-xl font-semibold text-gray-900 mb-2">
+              {searchQuery ? "No repositories found" : "No repositories yet"}
+            </p>
+            <p className="text-gray-600 text-sm">
+              {searchQuery
+                ? `No results for "${searchQuery}". Try a different search.`
+                : "Link your GitHub account to get started."}
+            </p>
           </div>
         )}
       </div>
 
-      {/* Infinite Scroll / Load More Button */}
-      <div className="mt-10 text-center">
+      <div className="mt-12 flex justify-center">
         {hasNextPage && (
           <Button
             onClick={() => fetchNextPage()}
             disabled={isFetchingNextPage}
-            className="bg-blue-600 hover:bg-blue-700 text-white"
+            className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-2.5"
           >
             {isFetchingNextPage ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Loading More...
+                Loading...
               </>
             ) : (
-              "Load More Repositories"
+              "Load More Repos"
             )}
           </Button>
         )}
 
         {!hasNextPage && allRepositories.length > 0 && (
-          <p className="text-sm text-gray-500 mt-4">
-            You have reached the end of your repository list.
-          </p>
+          <p className="text-sm text-gray-400">All repositories loaded</p>
         )}
       </div>
     </div>

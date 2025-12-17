@@ -8,7 +8,6 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import {
   ExternalLink,
   Clock,
@@ -19,53 +18,32 @@ import {
 import { useQuery } from "@tanstack/react-query";
 import { getReviews } from "@/module/review/actions";
 import { formatDistanceToNow } from "date-fns";
-import Link from "next/link";
-
-// --- Data Structures ---
-
-interface Review {
-  id: string;
-  repositoryId: string;
-  repository: {
-    id: string;
-    fullName: string;
-    url: string;
-  };
-  prNumber: number;
-  prTitle: string;
-  prUrl: string;
-  review: string;
-  status: "completed" | "pending" | "failed" | string;
-  // FIX: Changed to Date type to match Prisma's return type and fix build error
-  createdAt: Date;
-}
-
-// --- Helper Components ---
-
-interface ReviewCardProps {
-  review: Review;
-}
+import type { Review, ReviewCardProps } from "@/types/review/types";
 
 const ReviewCard: React.FC<ReviewCardProps> = ({ review }) => {
   const statusConfig = {
     completed: {
       icon: CheckCircle2,
-      color: "bg-green-500 hover:bg-green-600",
+      color:
+        "bg-white text-green-500 border-green-500 hover:text-green-600 hover:border-green-600",
       text: "Completed",
     },
     pending: {
       icon: Clock,
-      color: "bg-yellow-500 hover:bg-yellow-600",
+      color:
+        "bg-white text-yellow-600 border-yellow-600 hover:text-yellow-700 hover:border-yellow-700",
       text: "In Progress",
     },
     failed: {
       icon: XCircle,
-      color: "bg-red-500 hover:bg-red-600",
+      color:
+        "bg-white text-red-500 border-red-500 hover:text-red-600 hover:border-red-600",
       text: "Failed",
     },
     default: {
       icon: Clock,
-      color: "bg-gray-500 hover:bg-gray-600",
+      color:
+        "bg-white text-gray-500 border-gray-500 hover:text-gray-600 hover:border-gray-600",
       text: review.status,
     },
   };
@@ -75,76 +53,52 @@ const ReviewCard: React.FC<ReviewCardProps> = ({ review }) => {
     statusConfig.default;
   const Icon = config.icon;
 
-  // Calculate time elapsed
   const timeAgo = formatDistanceToNow(new Date(review.createdAt), {
     addSuffix: true,
   });
 
   return (
-    <Card className="shadow-lg transition-all duration-300 hover:shadow-xl hover:border-blue-200">
-      <CardHeader className="p-4 sm:p-6 pb-3 border-b border-gray-100">
-        <div className="flex justify-between items-start">
-          {/* PR Title and Link */}
+    <Card className="shadow-lg transition-all duration-300 hover:shadow-2xl hover:border-blue-300">
+      <CardHeader>
+        <div className="flex items-center justify-between">
           <CardTitle className="text-xl font-bold text-gray-900 pr-4">
-            <Link
-              href={review.prUrl}
-              target="_blank"
-              className="hover:text-blue-600 transition-colors"
-            >
-              {review.prTitle}
-            </Link>
+            <h2>
+              {review.prTitle} @{review.repository.fullName}
+            </h2>
           </CardTitle>
 
-          {/* Status Badge */}
-          <Badge
-            className={`text-white font-semibold flex items-center flex-shrink-0 ${config.color}`}
-          >
-            <Icon className="w-4 h-4 mr-1" />
-            {config.text}
-          </Badge>
-        </div>
+          <div className="flex items-center gap-x-2">
+            <Badge
+              className={`text-white font-semibold flex items-center ${config.color}`}
+            >
+              <Icon className="w-4 h-4 mr-1" />
+              {config.text}
+            </Badge>
 
-        {/* Repo and Time */}
-        <CardDescription className="flex items-center justify-between text-sm text-gray-500 mt-1">
-          <span className="font-medium text-gray-600">
-            {review.repository.fullName}
-          </span>
-          <span className="flex items-center text-xs">
-            <Clock className="w-3 h-3 mr-1" />
-            Reviewed {timeAgo}
-          </span>
-        </CardDescription>
+            <Badge
+              className={`font-semibold flex items-center bg-white text-gray-500 border-gray-500 hover:text-gray-600 hover:border-gray-600`}
+            >
+              <Clock className="w-4 h-4 mr-1" />
+              Reviewed {timeAgo}
+            </Badge>
+
+            <Badge
+              className={`font-semibold bg-white text-blue-500 border-blue-500 hover:text-blue-600 hover:border-blue-600`}
+            >
+              <a href={review.prUrl} className="flex gap-x-2" target="_blanck">
+                <ExternalLink className="w-4 h-4 mr-1" />
+                Visit PR
+              </a>
+            </Badge>
+          </div>
+        </div>
       </CardHeader>
 
-      <CardContent className="p-4 sm:p-6 pt-4">
-        {/* AI Review Header */}
-        <h3 className="text-lg font-semibold text-gray-800 mb-2 border-b border-gray-100 pb-1">
-          AI Analysis
-        </h3>
-
-        {/* AI Review in Code Block Format (Scrollable) */}
+      <CardContent className="px-4 sm:px-6">
         <div className="max-h-60 overflow-y-auto rounded-lg border border-gray-200 bg-gray-50 p-3 shadow-inner">
           <pre className="text-sm text-gray-800 whitespace-pre-wrap font-mono">
             {review.review}
           </pre>
-        </div>
-
-        {/* Action Buttons */}
-        <div className="flex space-x-3 mt-6">
-          <Button asChild className="bg-blue-600 hover:bg-blue-700">
-            <Link href={`/dashboard/reviews/${review.id}`}>
-              View Full Analysis
-            </Link>
-          </Button>
-          <Button
-            asChild
-            variant="outline"
-            className="text-gray-700 hover:bg-gray-100"
-          >
-            <a href={review.prUrl} target="_blank">
-              View Pull Request <ExternalLink className="w-4 h-4 ml-2" />
-            </a>
-          </Button>
         </div>
       </CardContent>
     </Card>
@@ -173,8 +127,8 @@ function ReviewPage() {
   }
 
   return (
-    <div className="p-4 sm:p-6 lg:p-8 bg-gray-50 min-h-screen">
-      <h1 className="text-3xl font-bold tracking-tight text-gray-900 mb-6">
+    <div className="px-4 sm:px-6 lg:px-6 min-h-screen">
+      <h1 className="text-3xl font-bold tracking-tight text-gray-900 mb-1">
         AI Code Review History
       </h1>
       <p className="text-gray-600 mb-8">
@@ -195,7 +149,7 @@ function ReviewPage() {
           </CardDescription>
         </Card>
       ) : (
-        <div className="space-y-6">
+        <div className="space-y-3">
           {reviewsArray.map((review) => (
             <ReviewCard key={review.id} review={review} />
           ))}

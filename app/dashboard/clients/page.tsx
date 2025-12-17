@@ -1,4 +1,7 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
+
+import type React from "react";
 
 import { useEffect, useState } from "react";
 import {
@@ -9,6 +12,30 @@ import {
 } from "@/module/repo-client/actions";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Plus, Send, Users } from "lucide-react";
 
 type Client = {
   id: string;
@@ -33,6 +60,7 @@ export default function ClientsPage() {
   const [repos, setRepos] = useState<Repo[]>([]);
   const [loading, setLoading] = useState(false);
   const [sendingEmail, setSendingEmail] = useState<string | null>(null);
+  const [open, setOpen] = useState(false);
 
   async function loadData() {
     try {
@@ -61,6 +89,7 @@ export default function ClientsPage() {
       setName("");
       setEmail("");
       setRepoId("");
+      setOpen(false);
 
       await loadData();
     } catch (err: any) {
@@ -72,12 +101,14 @@ export default function ClientsPage() {
 
   async function handleSendEmail(repoIdToSend: string) {
     setSendingEmail(repoIdToSend);
-    
+
     try {
       const result = await sendEmail(repoIdToSend);
-      
+
       if (result.success) {
-        toast.success("Email queued successfully! Clients will receive it shortly.");
+        toast.success(
+          "Email queued successfully! Clients will receive it shortly."
+        );
       } else {
         toast.error("Failed to send email");
       }
@@ -90,103 +121,167 @@ export default function ClientsPage() {
   }
 
   return (
-    <div className="max-w-4xl mx-auto p-6 space-y-10">
-      <div>
-        <h1 className="text-2xl font-bold mb-4">Add Client</h1>
+    <div className="min-h-screen ">
+      {/* Header */}
+      <div className="">
+        <div className="max-w-7xl mx-auto px-3 py-2">
+          <div className="flex items-center justify-between">
 
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <input
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            placeholder="Client Name"
-            className="w-full border p-2 rounded"
-            required
-          />
+            <div className="flex items-center gap-3">
+              <div>
+                <h1 className="text-3xl font-bold text-slate-900">Clients</h1>
+                <p className="text-sm text-slate-500 pt-1">
+                  Connect Clients with Repositories to update them status by AI regularly
+                </p>
+              </div>
+            </div>
 
-          <input
-            type="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            placeholder="Client Email"
-            className="w-full border p-2 rounded"
-            required
-          />
+            <Dialog open={open} onOpenChange={setOpen}>
+              <DialogTrigger asChild>
+                <Button
+                  size="lg"
+                  className="gap-2 bg-blue-600 hover:bg-blue-700"
+                >
+                  <Plus className="h-5 w-5" />
+                  Add Client
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="max-w-md">
+                <DialogHeader>
+                  <DialogTitle className="text-xl">Add New Client</DialogTitle>
+                </DialogHeader>
 
-          <select
-            value={repoId}
-            onChange={(e) => setRepoId(e.target.value)}
-            className="w-full border p-2 rounded"
-            required
-          >
-            <option value="">Select Repository</option>
-            {repos.map((repo) => (
-              <option key={repo.id} value={repo.id}>
-                {repo.name}
-              </option>
-            ))}
-          </select>
+                <form onSubmit={handleSubmit} className="space-y-5">
+                  <div className="space-y-1">
+                    <Label htmlFor="name" className="text-sm font-medium">
+                      Client Name
+                    </Label>
+                    <Input
+                      id="name"
+                      value={name}
+                      onChange={(e) => setName(e.target.value)}
+                      placeholder="Enter client name"
+                      required
+                      className="h-9 border-blue-200 focus:border-blue-500 focus:ring-blue-500"
+                    />
+                  </div>
 
-          <button
-            type="submit"
-            disabled={loading}
-            className="bg-black text-white px-4 py-2 rounded disabled:opacity-50"
-          >
-            {loading ? "Adding..." : "Add Client"}
-          </button>
-        </form>
+                  <div className="space-y-1">
+                    <Label htmlFor="email" className="text-sm font-medium">
+                      Email Address
+                    </Label>
+                    <Input
+                      id="email"
+                      type="email"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      placeholder="client@gmail.com"
+                      required
+                      className="h-9 border-blue-200 focus:border-blue-500 focus:ring-blue-500"
+                    />
+                  </div>
+
+                  <div className="space-y-1">
+                    <Label htmlFor="repo" className="text-sm font-medium">
+                      Repository
+                    </Label>
+                    <Select value={repoId} onValueChange={setRepoId}>
+                      <SelectTrigger
+                        id="repo"
+                        className="h-9 w-full border-blue-200 focus:border-blue-500 focus:ring-blue-500"
+                      >
+                        <SelectValue placeholder="Select a repository" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {repos.map((repo) => (
+                          <SelectItem className="cursor-pointer" key={repo.id} value={repo.id}>
+                            {repo.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <Button
+                    type="submit"
+                    disabled={loading}
+                    className="w-full bg-blue-600 hover:bg-blue-700 h-9"
+                  >
+                    {loading ? "Adding..." : "Add Client"}
+                  </Button>
+                </form>
+              </DialogContent>
+            </Dialog>
+          </div>
+        </div>
       </div>
 
-      {/* Repository - Client Mapping */}
-      <div>
-        <h2 className="text-xl font-semibold mb-4">
-          Repository - Client Mapping
-        </h2>
+      {/* Main Content */}
+      <div className="max-w-7xl mx-auto px-3 py-2">
+        {repos.length === 0 ? (
+          <div className="text-center py-12">
+            <Users className="h-12 w-12 text-slate-300 mx-auto mb-4" />
+            <p className="text-slate-500 text-lg">No repositories found</p>
+          </div>
+        ) : (
+          <div className="grid gap-3">
+            {repos.map((repo) => (
+              <Card
+                key={repo.id}
+                className="border-blue-100 hover:shadow-md transition-shadow"
+              >
+                <CardHeader>
+                  <div className="flex items-start justify-between">
+                    <div className="flex-1">
+                      <CardTitle className="text-xl text-slate-900">
+                        {repo.fullName}
+                      </CardTitle>
+                    </div>
+                    <Button
+                      onClick={() => handleSendEmail(repo.id)}
+                      disabled={
+                        sendingEmail === repo.id ||
+                        repo.repositoryClients.length === 0
+                      }
+                      size="sm"
+                      variant="outline"
+                      className="gap-2 border-blue-200 hover:bg-blue-50"
+                    >
+                      <Send className="h-4 w-4" />
+                      {sendingEmail === repo.id ? "Sending..." : "Send Email"}
+                    </Button>
+                  </div>
+                </CardHeader>
 
-        {repos.length === 0 && (
-          <p className="text-sm text-gray-500">No repositories found.</p>
+                <CardContent>
+                  {repo.repositoryClients.length === 0 ? (
+                    <p className="text-slate-500 text-sm">
+                      No clients mapped yet
+                    </p>
+                  ) : (
+                    <div className="space-y-3">
+                      <div className="grid gap-2">
+                        {repo.repositoryClients.map(({ client }) => (
+                          <div
+                            key={client.id}
+                            className="flex items-center gap-3 px-3 to-white rounded-lg transition-colors"
+                          >
+                            <div className="h-2 w-2 rounded-full bg-green-500" />
+                            <div className="flex-1 min-w-0">
+                              <p className="font-medium text-slate-900 text-base">
+                                {client.name} : {client.email}
+                              </p>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            ))}
+          </div>
         )}
-
-        <div className="space-y-6">
-          {repos.map((repo) => (
-            <div key={repo.id} className="border rounded p-4">
-              <div className="flex justify-between items-start mb-3">
-                <div className="flex-1">
-                  <h3 className="font-semibold text-lg mb-1">{repo.name}</h3>
-                  <p className="text-sm text-gray-600 mb-2">{repo.fullName}</p>
-                </div>
-                
-                <Button 
-                  onClick={(e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    handleSendEmail(repo.id);
-                  }}
-                  disabled={sendingEmail === repo.id || repo.repositoryClients.length === 0}
-                  size="sm"
-                  type="button"
-                >
-                  {sendingEmail === repo.id ? "Sending..." : "Send Email"}
-                </Button>
-              </div>
-
-              {repo.repositoryClients.length === 0 ? (
-                <p className="text-sm text-gray-500">No clients mapped</p>
-              ) : (
-                <div>
-                  <p className="text-sm font-medium mb-2">Mapped Clients:</p>
-                  <ul className="text-sm space-y-1">
-                    {repo.repositoryClients.map(({ client }) => (
-                      <li key={client.id} className="flex items-center gap-2">
-                        <span className="w-2 h-2 bg-green-500 rounded-full"></span>
-                        <b>{client.name}</b> — {client.email}
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              )}
-            </div>
-          ))}
-        </div>
       </div>
     </div>
   );

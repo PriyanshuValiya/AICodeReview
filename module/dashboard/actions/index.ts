@@ -78,7 +78,13 @@ export async function getDashboardStats() {
 
     const totalReviews = await prisma.review.count();
 
-    return { totalCommits, totalPRs, totalReviews, totalRepos };
+    const subscriptionType = await prisma.user.findFirst({
+      where: {
+        email: session?.user?.email
+      }
+    })
+
+    return { totalCommits, totalPRs, totalReviews, totalRepos, subscriptionType };
   } catch (error) {
     console.error("Error fetching dashboard status:", error);
     return {
