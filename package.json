@@ -4,10 +4,9 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "next build",
+    "build": "next build && bunx prisma generate",
     "start": "next start",
-    "lint": "eslint",
-    "deploy": "bun run build && git add . && git commit -m 'add final UI' && git push origin main"
+    "lint": "eslint"
   },
   "dependencies": {
     "@ai-sdk/google": "^2.0.46",
