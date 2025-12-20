@@ -1,6 +1,9 @@
 import { pineconeIndex } from "@/lib/pinecone";
 import { embed } from "ai";
 import { google } from "@ai-sdk/google";
+import { parseWithASTService } from "@/module/ast/client";
+import type { PineconeRecord } from "@pinecone-database/pinecone";
+import type { CodeMetadata } from "@/types/ast/type";
 
 export async function generateEmbedding(text: string) {
   const { embedding } = await embed({
@@ -15,14 +18,35 @@ export async function indexCodebase(
   repoId: string,
   files: { path: string; content: string }[]
 ) {
-  const vectors = [];
+  console.log("🚀 indexCodebase started for", repoId);
+  const vectors: PineconeRecord<CodeMetadata>[] = [];
 
   for (const file of files) {
-    const content = `File: ${file.path}\n\n${file.content}`;
-    const truncatedContent = content.slice(0, 8000);
+    console.log("📄 Processing file:", file.path);
+    const ext = file.path.split(".").pop();
+    if (!ext || !["js", "ts", "jsx", "tsx"].includes(ext)) {
+      continue;
+    }
+
+    let symbols: {
+      type: "function" | "class";
+      name: string;
+      code: string;
+      startLine: number;
+      endLine: number;
+    }[] = [];
 
     try {
-      const embedding = await generateEmbedding(truncatedContent);
+      const result = await parseWithASTService(file.content, ext);
+      symbols = result.symbols;
+    } catch (error) {
+      console.error("AST service failed for:", file.path, error);
+    }
+
+    console.log("Symbol Size: ", symbols.length);
+
+    if (symbols.length === 0) {
+      const embedding = await generateEmbedding(file.content.slice(0, 8000));
 
       vectors.push({
         id: `${repoId}-${file.path.replace(/\//g, "_")}`,
@@ -30,24 +54,40 @@ export async function indexCodebase(
         metadata: {
           repoId,
           path: file.path,
-          content: truncatedContent,
+          type: "file",
         },
       });
-    } catch (error) {
-      console.error(`Files to embed ${file.path}:`, error);
+
+      continue;
     }
 
-    if (vectors.length > 0) {
-      const batchSize = 100;
+    for (const symbol of symbols) {
+      const embedding = await generateEmbedding(symbol.code.slice(0, 2000));
 
-      for (let i = 0; i < vectors.length; i += batchSize) {
-        const batch = vectors.slice(i, i + batchSize);
-        await pineconeIndex.upsert(batch);
-      }
-
-      console.log("Indexing Completed");
+      vectors.push({
+        id: `${repoId}-${file.path.replace(/\//g, "_")}-${symbol.name}`,
+        values: embedding,
+        metadata: {
+          repoId,
+          path: file.path,
+          type: "symbol",
+          symbolName: symbol.name,
+          symbolType: symbol.type,
+          startLine: symbol.startLine,
+          endLine: symbol.endLine,
+        },
+      });
     }
   }
+
+  const batchSize = 100;
+
+  for (let i = 0; i < vectors.length; i += batchSize) {
+    const batch = vectors.slice(i, i + batchSize);
+    await pineconeIndex.upsert(batch);
+  }
+
+  console.log(`Indexing completed: ${vectors.length} vectors`);
 }
 
 export async function retrieveContext(
@@ -59,12 +99,10 @@ export async function retrieveContext(
 
   const results = await pineconeIndex.query({
     vector: embedding,
-    filter: { repoId },
+    filter: { repoId, type: "symbol" },
     topK,
     includeMetadata: true,
   });
 
-  return results.matches
-    .map((match) => match.metadata?.content as string)
-    .filter(Boolean);
+  return results.matches.map((match) => match.metadata).filter(Boolean);
 }

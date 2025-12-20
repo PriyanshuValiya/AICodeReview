@@ -2,7 +2,6 @@ import { inngest } from "../client";
 import prisma from "@/lib/db";
 import { indexCodebase } from "@/module/ai/lib/rag";
 import { getRepoFileContent } from "@/module/github/lib/github";
-import { success } from "better-auth";
 
 export const indexRepo = inngest.createFunction(
   { id: "index-repo" },

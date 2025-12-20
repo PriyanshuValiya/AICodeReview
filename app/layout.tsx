@@ -24,7 +24,7 @@ const openSans = Open_Sans({
 
 
 export const metadata: Metadata = {
-  title: "AI Code Reviewer",
+  title: "CodeRat",
   description: "Generated auto AI Reviews",
 };
 
