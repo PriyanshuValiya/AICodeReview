@@ -6,4 +6,5 @@ export type CodeMetadata = {
   symbolType?: "function" | "class";
   startLine?: number;
   endLine?: number;
+  content?: string;
 };

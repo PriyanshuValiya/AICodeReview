@@ -7,6 +7,20 @@ import { retrieveContext } from "@/module/ai/lib/rag";
 import { generateText } from "ai";
 import { google } from "@ai-sdk/google";
 import prisma from "@/lib/db";
+import type { ASTSymbolContext } from "@/types/review/types";
+
+function formatASTContext(symbols: ASTSymbolContext[]) {
+  if (symbols.length === 0) return "";
+
+  return symbols
+    .map(
+      (s) => `File: ${s.path}
+Symbol: ${s.symbolName ?? "unknown"}
+Type: ${s.symbolType ?? "unknown"}
+Lines: ${s.startLine ?? "?"}-${s.endLine ?? "?"}`
+    )
+    .join("\n\n");
+}
 
 export const generateReview = inngest.createFunction(
   { id: "generate-review", concurrency: 5 },
@@ -20,7 +34,7 @@ export const generateReview = inngest.createFunction(
       async () => {
         const account = await prisma.account.findFirst({
           where: {
-            userId: userId,
+            userId,
             providerId: "github",
           },
         });
@@ -35,39 +49,66 @@ export const generateReview = inngest.createFunction(
           repo,
           prNumber
         );
+
         return { ...data, token: account.accessToken };
       }
     );
 
-    const context = await step.run("retrieve-context", async () => {
-      const query = `${title}\n${description}`;
+    const astContext = await step.run("retrieve-ast-context", async () => {
+      const query = `
+          PR Title: ${title}
+          PR Description: ${description || ""}
+          Diff Summary:
+          ${diff.slice(0, 2000)}
+                `.trim();
 
-      return await retrieveContext(query, `${owner}/${repo}`);
+      return (await retrieveContext(
+        query,
+        `${owner}/${repo}`
+      )) as ASTSymbolContext[];
     });
 
     const review = await step.run("generate-ai-review", async () => {
-      const prompt = `You are an expert code reviewer. Analyze the following pull request and provide a detailed, constructive code review.
+      const formattedASTContext = formatASTContext(astContext);
 
-PR Title: ${title}
-PR Description: ${description || "No description provided"}
+      const prompt = `
+          You are a senior software engineer performing a professional code review.
 
-Context from Codebase:
-${context.join("\n\n")}
+          This system uses AST-based indexing. The context below represents
+          specific functions, routes, or classes related to the pull request.
 
-Code Changes:
-\`\`\`diff
-${diff}
-\`\`\`
+          ====================
+          PR METADATA
+          ====================
+          Title: ${title}
+          Description: ${description || "No description provided"}
 
-Please provide:
-1. **Walkthrough**: A file-by-file explanation of the changes.
-2. **Sequence Diagram**: A Mermaid JS sequence diagram visualizing the flow of the changes (if applicable). Use \`\`\`mermaid ... \`\`\` block. **IMPORTANT**: Ensure the Mermaid syntax is valid. Do not use special characters (like quotes, braces, parentheses) inside Note text or labels as it breaks rendering. Keep the diagram simple.
-3. **Summary**: Brief overview.
-4. **Strengths**: What's done well.
-5. **Issues**: Bugs, security concerns, code smells.
-6. **Suggestions**: Specific code improvements.
+          ====================
+          AST CONTEXT (Symbol-Level)
+          ====================
+          ${formattedASTContext || "No relevant symbols found"}
 
-Format your response in markdown.`;
+          ====================
+          CODE CHANGES (DIFF)
+          ====================
+          \`\`\`diff
+          ${diff}
+          \`\`\`
+
+          ====================
+          REVIEW TASKS
+          ====================
+          1. Walk through the changes and explain WHAT changed and WHY.
+          2. Identify logical, architectural, performance, or security issues.
+          3. Comment on affected functions, routes, or handlers.
+          4. Suggest concrete improvements with reasoning.
+          5. If applicable, generate a SIMPLE Mermaid sequence diagram.
+            - Valid Mermaid syntax only
+            - Keep it minimal
+            - Avoid special characters in labels
+
+          Respond in clear, professional Markdown.
+        `;
 
       const { text } = await generateText({
         model: google("gemini-2.5-flash"),
@@ -89,20 +130,22 @@ Format your response in markdown.`;
         },
       });
 
-      if (repository) {
-        await prisma.review.create({
-          data: {
-            repositoryId: repository.id,
-            prNumber,
-            prTitle: title,
-            prUrl: `https://github.com/${owner}/${repo}/pull/${prNumber}`,
-            review,
-            status: "completed",
-          },
-        });
+      if (!repository) {
+        return;
       }
+
+      await prisma.review.create({
+        data: {
+          repositoryId: repository.id,
+          prNumber,
+          prTitle: title,
+          prUrl: `https://github.com/${owner}/${repo}/pull/${prNumber}`,
+          review,
+          status: "completed",
+        },
+      });
     });
-    
+
     return { success: true };
   }
 );

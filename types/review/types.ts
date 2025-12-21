@@ -17,3 +17,11 @@ export interface Review {
 export interface ReviewCardProps {
   review: Review;
 }
+
+export type ASTSymbolContext = {
+  path: string;
+  symbolName?: string;
+  symbolType?: string;
+  startLine?: number;
+  endLine?: number;
+};

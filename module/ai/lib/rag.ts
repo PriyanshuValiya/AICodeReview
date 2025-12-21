@@ -46,19 +46,25 @@ export async function indexCodebase(
     console.log("Symbol Size: ", symbols.length);
 
     if (symbols.length === 0) {
-      const embedding = await generateEmbedding(file.content.slice(0, 8000));
+      const content = `File: ${file.path}\n\n${file.content}`;
+      const truncatedContent = content.slice(0, 8000);
 
-      vectors.push({
-        id: `${repoId}-${file.path.replace(/\//g, "_")}`,
-        values: embedding,
-        metadata: {
-          repoId,
-          path: file.path,
-          type: "file",
-        },
-      });
+      try {
+        const embedding = await generateEmbedding(truncatedContent);
 
-      continue;
+        vectors.push({
+          id: `${repoId}-${file.path.replace(/\//g, "_")}`,
+          values: embedding,
+          metadata: {
+            repoId,
+            path: file.path,
+            content: truncatedContent,
+            type: "file",
+          },
+        });
+      } catch (error) {
+        console.error(`Files to embed ${file.path}:`, error);
+      }
     }
 
     for (const symbol of symbols) {
@@ -93,7 +99,7 @@ export async function indexCodebase(
 export async function retrieveContext(
   query: string,
   repoId: string,
-  topK: number = 5
+  topK: number = 10
 ) {
   const embedding = await generateEmbedding(query);
 
