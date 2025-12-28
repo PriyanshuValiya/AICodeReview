@@ -1,28 +1,23 @@
-# ---- Base ----
 FROM node:20-alpine
 
 WORKDIR /app
 
-# OS deps needed by Prisma
+# System deps needed by Prisma
 RUN apk add --no-cache openssl libc6-compat
 
-# ---- Dependencies ----
+# Install deps
 COPY package.json package-lock.json ./
 RUN npm ci
 
-# ---- App source ----
+# Copy source
 COPY . .
 
-# ---- Prisma ----
+# Prisma client generation
 RUN npx prisma generate
 
-# ---- Build Next.js ----
+# Build Next.js
 RUN npm run build
-
-# ---- Runtime ----
-ENV NODE_ENV=production
-ENV PORT=3000
 
 EXPOSE 3000
 
-CMD ["npm", "run", "start"]
+CMD ["npm", "start"]
