@@ -332,7 +332,7 @@ function AIIllustration() {
       </svg>
 
       <div>
-        <h2 className="text-2xl font-bold text-gray-900 mb-2">
+        <h2 className="text-3xl font-bold text-gray-900 mb-2 italic">
           AI Intelligent Code Reviewer
         </h2>
         <p className="text-gray-600 text-sm leading-relaxed">

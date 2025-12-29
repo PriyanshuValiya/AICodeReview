@@ -3,21 +3,8 @@
 import { useQuery } from "@tanstack/react-query";
 import { ActivityCalendar } from "react-activity-calendar";
 import { getUserContributionStats } from "../actions";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Loader2, Zap } from "lucide-react";
-
-// Define the expected data structure for the calendar
-interface ContributionData {
-  date: string;
-  count: number;
-  level: number;
-}
 
 function ContributionGraph() {
   const { data, isLoading } = useQuery({
@@ -62,21 +49,30 @@ function ContributionGraph() {
   }
 
   return (
-    <div className="w-full flex flex-col items-center gap-4 p-4">
+    <div className="w-full flex flex-col items-center gap-4 py-4">
       <div className="w-full overflow-x-auto">
         <div className="flex justify-center min-w-max px-4">
-          <ActivityCalendar
-            data={data.contributions}
-            colorScheme="light"
-            blockSize={11}
-            blockMargin={4}
-            fontSize={14}
-            showWeekdayLabels
-            showMonthLabels
-            theme={{
-              light: ["hsl(0, 0%, 92%)", "hsl(142, 71%, 45%)"],
-            }}
-          />
+          <Card className="w-full shadow-lg p-6 bg-white">
+            <CardHeader className="px-0 pt-0 pb-4">
+              <CardTitle className="text-xl font-semibold flex items-center">
+                <Zap className="w-5 h-5 mr-2 text-blue-600" /> Activity
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="p-0 flex justify-center">
+              <ActivityCalendar
+                data={data.contributions}
+                colorScheme="light"
+                blockSize={11}
+                blockMargin={4}
+                fontSize={14}
+                showWeekdayLabels
+                showMonthLabels
+                theme={{
+                  light: ["hsl(0, 0%, 92%)", "hsl(142, 71%, 45%)"],
+                }}
+              />
+            </CardContent>
+          </Card>
         </div>
       </div>
     </div>

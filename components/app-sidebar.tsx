@@ -97,7 +97,7 @@ function AppSidebar() {
       <SidebarContent>
         <div className="px-6 pt-6 pb-5">
           <Link
-            href="/dashboard"
+            href="/"
             className="flex justify-center space-x-2 text-3xl font-semibold"
           >
             <div className="flex items-center justify-center gap-x-3">
