@@ -7,9 +7,11 @@ RUN apt-get update \
   && rm -rf /var/lib/apt/lists/*
 
 COPY package.json package-lock.json ./
-RUN npm install
+RUN npm ci
 
 COPY . .
+
+ENV NEXT_DISABLE_TURBOPACK=1
 
 ARG DATABASE_URL
 ENV DATABASE_URL=$DATABASE_URL
