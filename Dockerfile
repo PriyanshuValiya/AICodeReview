@@ -12,16 +12,17 @@ RUN npm ci
 
 COPY . .
 
-RUN npx prisma generate && NEXT_PRIVATE_SKIP_TURBOPACK=1 npm run build
-
-ENV NEXT_FORCE_WEBPACK=1
-
+# 👇 Build-time env (REQUIRED for prisma)
 ARG DATABASE_URL
 ENV DATABASE_URL=$DATABASE_URL
 
+# Generate Prisma client
 RUN npx prisma generate
-RUN npm run build
 
+# Build Next.js
+RUN NEXT_PRIVATE_SKIP_TURBOPACK=1 npm run build
+
+# Runtime envs
 ENV NODE_ENV=production
 EXPOSE 3000
 
