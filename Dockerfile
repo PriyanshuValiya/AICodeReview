@@ -2,14 +2,17 @@ FROM node:20-slim
 
 WORKDIR /app
 
-RUN apt-get update \
-  && apt-get install -y openssl \
-  && rm -rf /var/lib/apt/lists/*
+RUN apt-get update && apt-get install -y \
+    openssl \
+    libc6 \
+    && rm -rf /var/lib/apt/lists/*
 
 COPY package.json package-lock.json ./
 RUN npm ci
 
 COPY . .
+
+RUN npx prisma generate && NEXT_PRIVATE_SKIP_TURBOPACK=1 npm run build
 
 ENV NEXT_FORCE_WEBPACK=1
 
