@@ -2,8 +2,6 @@ FROM node:20-slim
 
 WORKDIR /app
 
-RUN apk add --no-cache openssl libc6-compat
-
 COPY package.json package-lock.json ./
 RUN npm install
 
@@ -15,7 +13,7 @@ ENV DATABASE_URL=$DATABASE_URL
 RUN npx prisma generate
 RUN npm run build
 
-EXPOSE 3000
 ENV NODE_ENV=production
+EXPOSE 3000
 
-CMD ["npx", "next", "start"]
+CMD ["npm", "start"]
