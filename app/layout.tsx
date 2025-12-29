@@ -25,7 +25,7 @@ const openSans = Open_Sans({
 
 export const metadata: Metadata = {
   title: "CodeRat",
-  description: "Generated auto AI Reviews",
+  description: "Generate Auto AI Reviews",
 };
 
 export default function RootLayout({
