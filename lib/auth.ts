@@ -13,4 +13,5 @@ export const auth = betterAuth({
       scope: ["repo"]
     },
   },
+  trustedOrigins: ["https://coderat.priyanshuvaliya.dev"],
 });
