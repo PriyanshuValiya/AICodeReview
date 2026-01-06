@@ -34,12 +34,16 @@ export async function indexCodebase(
       endLine: number;
     }[] = [];
 
+    console.log("Start indexing");
+
     try {
       const result = await parseWithASTService(file.content, ext);
       symbols = result.symbols;
     } catch (error) {
       console.error("AST service failed for:", file.path, error);
     }
+
+    console.log("Stop Index :", symbols.length);
 
     if (symbols.length === 0) {
       const content = `File: ${file.path}\n\n${file.content}`;
