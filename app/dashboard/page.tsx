@@ -23,6 +23,7 @@ import {
   GitBranch,
   MessageSquare,
   Loader2,
+  Clock10,
 } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import {
@@ -147,8 +148,8 @@ function DashboardPage() {
         <div className="lg:col-span-12">
           <Card className="shadow-lg transition-all duration-300 hover:shadow-xl p-4 sm:p-6 bg-white">
             <CardHeader className="px-0 pt-0 pb-4">
-              <CardTitle className="text-xl font-semibold text-gray-800">
-                Last 6 Months Activity
+              <CardTitle className="text-xl font-semibold flex items-center">
+                <Clock10 className="w-5 h-5 mr-2 text-blue-600" /> Last 6 Months Activities
               </CardTitle>
               <CardDescription>
                 A breakdown of your coding and reviewing activity.

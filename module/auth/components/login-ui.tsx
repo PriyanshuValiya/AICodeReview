@@ -29,7 +29,6 @@ export default function LoginPage() {
 
     setLoading(true);
     try {
-      console.log("Sign in with:", { email, password });
     } finally {
       setLoading(false);
     }

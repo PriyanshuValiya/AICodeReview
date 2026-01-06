@@ -1,5 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
-
 "use server";
 
 import prisma from "@/lib/db";
@@ -26,8 +24,6 @@ export async function addClient(name: string, email: string) {
     throw new Error("Name and email are required");
   }
 
-  console.log("Data", name, email);
-
   const existing = await prisma.client.findFirst({
     where: { email },
   });
@@ -48,8 +44,6 @@ export async function addRepoClient(repoId: string, clientId: string) {
   if (!repoId || !clientId) {
     throw new Error("repoId and clientId are required");
   }
-
-  console.log("Data: ", repoId, clientId);
 
   return prisma.repositoryClient.upsert({
     where: {
@@ -215,6 +209,7 @@ export async function sendEmail(repositoryId: string) {
         repositoryId,
         triggeredBy: "manual",
         userId: session.user.id,
+        managerEmail: session.user.email, 
       },
     });
 

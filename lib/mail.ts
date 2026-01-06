@@ -1,13 +1,10 @@
-// lib/mail.ts
-// Email sending utility using Resend
-
 import { Resend } from "resend";
 
-// Initialize Resend
 const resend = new Resend(process.env.RESEND_API_KEY);
 
 interface SendMailOptions {
   to: string;
+  cc: string;
   subject: string;
   html: string;
   from?: string;
@@ -17,17 +14,19 @@ export async function sendMail({
   to,
   subject,
   html,
-  from = process.env.EMAIL_FROM || "noreply@notifications.priyanshuvaliya.me",
-}: SendMailOptions) {
+  from = process.env.EMAIL_FROM || "noreply@notifications.priyanshuvaliya.dev",
+  cc, 
+}: SendMailOptions) { 
   try {
-    const data = await resend.emails.send({
+    const emailPayload = {
       from,
       to,
       subject,
       html,
-    });
+      cc
+    };
 
-    console.log(`✅ Email sent successfully to ${to}`, data);
+    const data = await resend.emails.send(emailPayload);
     return { success: true, data };
   } catch (error) {
     console.error(`❌ Failed to send email to ${to}:`, error);
@@ -35,7 +34,7 @@ export async function sendMail({
   }
 }
 
-// Optional: Email template wrapper for consistent styling
+// Email template wrapper for consistent styling
 export function wrapEmailTemplate(content: string, repoName: string) {
   return `
 <!DOCTYPE html>

@@ -18,11 +18,9 @@ export async function indexCodebase(
   repoId: string,
   files: { path: string; content: string }[]
 ) {
-  console.log("🚀 indexCodebase started for", repoId);
   const vectors: PineconeRecord<CodeMetadata>[] = [];
 
   for (const file of files) {
-    console.log("📄 Processing file:", file.path);
     const ext = file.path.split(".").pop();
     if (!ext || !["js", "ts", "jsx", "tsx"].includes(ext)) {
       continue;
@@ -42,8 +40,6 @@ export async function indexCodebase(
     } catch (error) {
       console.error("AST service failed for:", file.path, error);
     }
-
-    console.log("Symbol Size: ", symbols.length);
 
     if (symbols.length === 0) {
       const content = `File: ${file.path}\n\n${file.content}`;
@@ -92,8 +88,6 @@ export async function indexCodebase(
     const batch = vectors.slice(i, i + batchSize);
     await pineconeIndex.upsert(batch);
   }
-
-  console.log(`Indexing completed: ${vectors.length} vectors`);
 }
 
 export async function retrieveContext(

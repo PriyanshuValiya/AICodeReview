@@ -1,7 +1,3 @@
-// import { Inngest } from "inngest";
-
-// export const inngest = new Inngest({ id: "ai-code-reviewer" });
-
 import { Inngest } from "inngest";
 
 export const inngest = new Inngest({

@@ -2,7 +2,7 @@ import { serve } from "inngest/next";
 import { inngest } from "@/inngest/client";
 import { indexRepo } from "@/inngest/functions";
 import { generateReview } from "@/inngest/functions/review";
-// import { weeklyRepoDispatcher } from "@/inngest/functions/weekly-dispatcher";
+import { scheduleRepoSummaries } from "@/inngest/functions/weekly-cron-function";
 import { repoWeeklySummary } from "@/inngest/functions/repo-weekly-summary";
 
 export const { GET, POST, PUT } = serve({
@@ -10,7 +10,7 @@ export const { GET, POST, PUT } = serve({
   functions: [
     indexRepo,
     generateReview,
-    // weeklyRepoDispatcher,
+    scheduleRepoSummaries,
     repoWeeklySummary,
   ],
 });

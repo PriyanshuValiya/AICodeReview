@@ -31,7 +31,6 @@ import {
 import {
   Card,
   CardContent,
-  CardDescription,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
@@ -60,12 +59,22 @@ export default function ClientsPage() {
   const [repos, setRepos] = useState<Repo[]>([]);
   const [loading, setLoading] = useState(false);
   const [sendingEmail, setSendingEmail] = useState<string | null>(null);
+  const [emailStatuses, setEmailStatuses] = useState<
+    Record<string, "idle" | "sending" | "sent">
+  >({});
   const [open, setOpen] = useState(false);
 
   async function loadData() {
     try {
       const data = await getRepoClientMap();
       setRepos(data || []);
+
+      // Initialize email statuses as 'idle' for all repos
+      const statuses: Record<string, "idle" | "sending" | "sent"> = {};
+      data?.forEach((repo) => {
+        statuses[repo.id] = "idle";
+      });
+      setEmailStatuses(statuses);
     } catch (error) {
       console.error("Error loading data:", error);
       toast.error("Failed to load repositories");
@@ -102,21 +111,55 @@ export default function ClientsPage() {
   async function handleSendEmail(repoIdToSend: string) {
     setSendingEmail(repoIdToSend);
 
+    // Set status to 'sending' (yellow)
+    setEmailStatuses((prev) => ({
+      ...prev,
+      [repoIdToSend]: "sending",
+    }));
+
     try {
       const result = await sendEmail(repoIdToSend);
 
       if (result.success) {
+        // Set status to 'sent' (green)
+        setEmailStatuses((prev) => ({
+          ...prev,
+          [repoIdToSend]: "sent",
+        }));
+
         toast.success(
           "Email queued successfully! Clients will receive it shortly."
         );
       } else {
+        // Revert to 'idle' on failure
+        setEmailStatuses((prev) => ({
+          ...prev,
+          [repoIdToSend]: "idle",
+        }));
         toast.error("Failed to send email");
       }
     } catch (error: any) {
       console.error("Can't send email:", error);
+      // Revert to 'idle' on error
+      setEmailStatuses((prev) => ({
+        ...prev,
+        [repoIdToSend]: "idle",
+      }));
       toast.error(error.message || "Failed to send email");
     } finally {
       setSendingEmail(null);
+    }
+  }
+
+  function getStatusColor(repoId: string): string {
+    const status = emailStatuses[repoId] || "idle";
+    switch (status) {
+      case "sending":
+        return "bg-yellow-500";
+      case "sent":
+        return "bg-green-500";
+      default:
+        return "bg-green-500";
     }
   }
 
@@ -126,12 +169,12 @@ export default function ClientsPage() {
       <div className="">
         <div className="max-w-7xl mx-auto px-3 py-2">
           <div className="flex items-center justify-between">
-
             <div className="flex items-center gap-3">
               <div>
                 <h1 className="text-3xl font-bold text-slate-900">Clients</h1>
                 <p className="text-sm text-slate-500 pt-1">
-                  Connect Clients with Repositories to update them status by AI regularly
+                  Connect Clients with Repositories to update them status by AI
+                  regularly
                 </p>
               </div>
             </div>
@@ -194,7 +237,11 @@ export default function ClientsPage() {
                       </SelectTrigger>
                       <SelectContent>
                         {repos.map((repo) => (
-                          <SelectItem className="cursor-pointer" key={repo.id} value={repo.id}>
+                          <SelectItem
+                            className="cursor-pointer"
+                            key={repo.id}
+                            value={repo.id}
+                          >
                             {repo.name}
                           </SelectItem>
                         ))}
@@ -266,7 +313,11 @@ export default function ClientsPage() {
                             key={client.id}
                             className="flex items-center gap-3 px-3 to-white rounded-lg transition-colors"
                           >
-                            <div className="h-2 w-2 rounded-full bg-green-500" />
+                            <div
+                              className={`h-2 w-2 rounded-full ${getStatusColor(
+                                repo.id
+                              )}`}
+                            />
                             <div className="flex-1 min-w-0">
                               <p className="font-medium text-slate-900 text-base">
                                 {client.name} : {client.email}

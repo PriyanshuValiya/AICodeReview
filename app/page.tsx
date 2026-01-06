@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import {
@@ -12,8 +13,14 @@ import {
   Rat,
 } from "lucide-react";
 import Link from "next/link";
+import { requireUnAuth } from '@/module/utils/auth-utils'
+
 
 export default function LandingPage() {
+  useEffect(() => {
+    requireUnAuth();
+  }, []);
+
   return (
     <div className="flex flex-col min-h-screen selection:bg-primary/20 mt-4">
       {/* Navigation */}

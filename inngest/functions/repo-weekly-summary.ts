@@ -15,16 +15,16 @@ function getWeekKey(date = new Date()) {
 }
 
 export const repoWeeklySummary = inngest.createFunction(
-  { 
+  {
     id: "repo-weekly-summary",
     retries: 3,
   },
   { event: "repo.weekly.summary" },
   async ({ event, step }) => {
-    const { repositoryId, triggeredBy } = event.data;
+    const { repositoryId, triggeredBy, managerEmail } = event.data;
     const weekKey = getWeekKey();
 
-    // Fetch repository with all necessary data
+    // Fetch repository 
     const repo = await step.run("fetch-repository", async () => {
       return prisma.repository.findUnique({
         where: { id: repositoryId },
@@ -38,6 +38,7 @@ export const repoWeeklySummary = inngest.createFunction(
             orderBy: { createdAt: "desc" },
             take: 10,
           },
+          user: true, 
         },
       });
     });
@@ -52,46 +53,50 @@ export const repoWeeklySummary = inngest.createFunction(
       return { skipped: true, reason: "no_clients" };
     }
 
-    // Generate AI summary once per repository
     const aiSummary = await step.run("generate-ai-summary", async () => {
       return generateRepoSummary(repo);
     });
 
     if (!aiSummary) {
-      console.error(`Failed to generate summary for repository ${repositoryId}`);
+      console.error(
+        `Failed to generate summary for repository ${repositoryId}`
+      );
       return { error: true, reason: "summary_generation_failed" };
     }
 
-    // Wrap content in email template
     const emailHtml = wrapEmailTemplate(aiSummary.html, repo.name);
 
     let sent = 0;
     const skipped = [];
     const errors = [];
 
+    const ccEmail = managerEmail || repo.user?.email;
+
     // Send emails to all clients
     for (const rc of repo.repositoryClients) {
-      // For manual triggers, always send
-      // For cron triggers, skip if already delivered this week
-      const shouldSkip = 
-        triggeredBy === "cron" && 
-        rc.deliveredAt && 
+      const shouldSkip =
+        triggeredBy === "cron" &&
+        rc.deliveredAt &&
         getWeekKey(rc.deliveredAt) === weekKey;
 
       if (shouldSkip) {
-        console.log(`⏭️ Skipping ${rc.client.email} - already delivered this week`);
+        console.log(
+          `Skipping ${rc.client.email} - already delivered this week`
+        );
         skipped.push(rc.client.email);
         continue;
       }
 
-      // Send email using Resend
       const emailResult = await step.run(`email-${rc.client.id}`, async () => {
         try {
-          await sendMail({
+          const emailOptions = {
             to: rc.client.email,
-            subject: `Weekly Update – ${repo.name}`,
+            subject: `Weekly Update - ${repo.name}`,
             html: emailHtml,
-          });
+            cc: managerEmail
+          };
+
+          await sendMail(emailOptions);
           return { success: true };
         } catch (error) {
           console.error(`Failed to send email to ${rc.client.email}:`, error);
@@ -104,7 +109,6 @@ export const repoWeeklySummary = inngest.createFunction(
         continue;
       }
 
-      // Mark as delivered only if email sent successfully
       await step.run(`mark-delivered-${rc.client.id}`, async () => {
         await prisma.repositoryClient.update({
           where: { id: rc.id },
@@ -126,6 +130,7 @@ export const repoWeeklySummary = inngest.createFunction(
       skippedEmails: skipped,
       errors: errors.length,
       errorDetails: errors,
+      managerCc: ccEmail || "not_available",
     };
   }
 );
