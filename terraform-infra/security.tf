@@ -50,5 +50,5 @@ resource "aws_ssm_parameter" "coderat_env" {
   name  = "/coderat/prod/env"
   type  = "SecureString"
 
-  value = file("${path.module}/../.env.prod")
+  value = file("${path.module}/../.env")
 }
