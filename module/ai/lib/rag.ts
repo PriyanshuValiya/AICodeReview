@@ -7,8 +7,9 @@ import type { CodeMetadata } from "@/types/ast/type";
 
 export async function generateEmbedding(text: string) {
   const { embedding } = await embed({
-    model: google.textEmbeddingModel("text-embedding-004"),
+    model: google.textEmbeddingModel("text-embedding-3-large"),
     value: text,
+    // value: query,
   });
 
   return embedding;

@@ -25,7 +25,11 @@ resource "aws_iam_role_policy" "coderat_ssm_policy" {
         "ssm:GetParameter",
         "ssm:GetParameters"
       ]
-      Resource = aws_ssm_parameter.coderat_env.arn
+      Resource = [
+          aws_ssm_parameter.coderat_env.arn,
+          aws_ssm_parameter.nginx_cert.arn,
+          aws_ssm_parameter.nginx_key.arn
+      ]
     }]
   })
 }
@@ -60,6 +64,8 @@ resource "aws_instance" "app" {
   }
 
   depends_on = [
-    aws_ssm_parameter.coderat_env
+    aws_ssm_parameter.coderat_env,
+    aws_ssm_parameter.nginx_cert,
+    aws_ssm_parameter.nginx_key
   ]
 }

@@ -52,3 +52,17 @@ resource "aws_ssm_parameter" "coderat_env" {
 
   value = file("${path.module}/../.env")
 }
+
+resource "aws_ssm_parameter" "nginx_cert" {
+  name  = "/coderat/nginx/cert"
+  type  = "SecureString"
+
+  value = file("${path.module}/../ssl/coderat.crt")
+}
+
+resource "aws_ssm_parameter" "nginx_key" {
+  name  = "/coderat/nginx/key"
+  type  = "SecureString"
+
+  value = file("${path.module}/../ssl/coderat.key")
+}
